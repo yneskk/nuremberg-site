@@ -1,9 +1,7 @@
 const zones = document.querySelectorAll(".zone");
 const infoCard = document.getElementById("infoCard");
-
 const introScreen = document.getElementById("introScreen");
 const startButton = document.getElementById("startButton");
-
 const factLayer = document.getElementById("factLayer");
 const factPanel = document.getElementById("factPanel");
 const factTitle = document.getElementById("factTitle");
@@ -42,7 +40,6 @@ function updateNotebook() {
     notesList.innerHTML = "<li>Пока заметок нет.</li>";
   } else {
     notesList.innerHTML = "";
-
     collectedNotes.forEach((note) => {
       const li = document.createElement("li");
       li.textContent = note;
@@ -61,10 +58,123 @@ function updateNotebook() {
   }
 }
 
+function addFactToNotebook(fact, button) {
+  if (collectedNotes.has(fact)) return false;
+
+  if (collectedNotes.size >= maxNotes) {
+    alert("В блокноте больше нет места.\nВы уже записали 6 заметок.");
+    return false;
+  }
+
+  collectedNotes.add(fact);
+  button.classList.add("used");
+  button.textContent = "✓ " + fact;
+
+  updateProgress();
+  updateNotebook();
+
+  return true;
+}
+
 function showFacts(zone) {
   factLayer.classList.add("open");
-
   factTitle.textContent = zone.dataset.title;
+  factOptions.innerHTML = "";
+
+  if (zone.classList.contains("prosecutors")) {
+    factIntro.textContent = "Выберите один факт про США и один факт про СССР.";
+
+    const usaTitle = document.createElement("h3");
+    usaTitle.textContent = "США";
+    factOptions.appendChild(usaTitle);
+
+    const usaFacts = [
+      zone.dataset.fact1,
+      zone.dataset.fact2,
+      zone.dataset.fact3
+    ];
+
+    const ussrTitle = document.createElement("h3");
+    ussrTitle.textContent = "СССР";
+
+    const ussrFacts = [
+      zone.dataset.fact4,
+      zone.dataset.fact5,
+      zone.dataset.fact6
+    ];
+
+    let usaChosen = usaFacts.some((fact) => collectedNotes.has(fact));
+    let ussrChosen = ussrFacts.some((fact) => collectedNotes.has(fact));
+
+    usaFacts.forEach((fact) => {
+      const button = document.createElement("button");
+      button.className = "fact-button";
+      button.textContent = fact;
+
+      if (collectedNotes.has(fact)) {
+        button.classList.add("used");
+        button.textContent = "✓ " + fact;
+      }
+
+      button.addEventListener("click", () => {
+        if (usaChosen && !collectedNotes.has(fact)) {
+          alert("Про США можно выбрать только один факт.");
+          return;
+        }
+
+        const added = addFactToNotebook(fact, button);
+
+        if (added) {
+          usaChosen = true;
+        }
+
+        if (usaChosen && ussrChosen) {
+          setTimeout(() => {
+            factLayer.classList.remove("open");
+          }, 250);
+        }
+      });
+
+      factOptions.appendChild(button);
+    });
+
+    factOptions.appendChild(ussrTitle);
+
+    ussrFacts.forEach((fact) => {
+      const button = document.createElement("button");
+      button.className = "fact-button";
+      button.textContent = fact;
+
+      if (collectedNotes.has(fact)) {
+        button.classList.add("used");
+        button.textContent = "✓ " + fact;
+      }
+
+      button.addEventListener("click", () => {
+        if (ussrChosen && !collectedNotes.has(fact)) {
+          alert("Про СССР можно выбрать только один факт.");
+          return;
+        }
+
+        const added = addFactToNotebook(fact, button);
+
+        if (added) {
+          ussrChosen = true;
+        }
+
+        if (usaChosen && ussrChosen) {
+          setTimeout(() => {
+            factLayer.classList.remove("open");
+          }, 250);
+        }
+      });
+
+      factOptions.appendChild(button);
+    });
+
+    return;
+  }
+
   factIntro.textContent = "Выберите факт, который хотите записать в блокнот.";
 
   const facts = [
@@ -72,8 +182,6 @@ function showFacts(zone) {
     zone.dataset.fact2,
     zone.dataset.fact3
   ];
-
-  factOptions.innerHTML = "";
 
   facts.forEach((fact) => {
     const button = document.createElement("button");
@@ -86,24 +194,13 @@ function showFacts(zone) {
     }
 
     button.addEventListener("click", () => {
-      if (collectedNotes.has(fact)) return;
+      const added = addFactToNotebook(fact, button);
 
-      if (collectedNotes.size >= maxNotes) {
-        alert("В блокноте больше нет места. Вы уже записали 6 заметок.");
-        return;
+      if (added) {
+        setTimeout(() => {
+          factLayer.classList.remove("open");
+        }, 250);
       }
-
-      collectedNotes.add(fact);
-
-      button.classList.add("used");
-      button.textContent = "✓ " + fact;
-
-      updateProgress();
-      updateNotebook();
-
-      setTimeout(() => {
-        factLayer.classList.remove("open");
-      }, 250);
     });
 
     factOptions.appendChild(button);
@@ -120,10 +217,10 @@ zones.forEach((zone) => {
 
     setTimeout(() => {
       infoCard.innerHTML = `
-        <p class="small-title">Зона исследования</p>
-        <h1>${title}</h1>
+        <span>Зона исследования</span>
+        <h2>${title}</h2>
         <p>${text}</p>
-        <p class="progress-text" id="progressText">Записано: ${collectedNotes.size}/${maxNotes}</p>
+        <p class="small-note">Записано: ${collectedNotes.size}/${maxNotes}</p>
       `;
 
       infoCard.style.opacity = "1";
@@ -212,10 +309,10 @@ timePoints.forEach((point) => {
 
     setTimeout(() => {
       infoCard.innerHTML = `
-        <p class="small-title">Ход процесса</p>
-        <h1>${point.dataset.title}</h1>
+        <span>Ход процесса</span>
+        <h2>${point.dataset.title}</h2>
         <p>${point.dataset.text}</p>
-        <p class="progress-text" id="progressText">Записано: ${collectedNotes.size}/${maxNotes}</p>
+        <p class="small-note">Записано: ${collectedNotes.size}/${maxNotes}</p>
       `;
 
       infoCard.style.opacity = "1";
@@ -230,59 +327,19 @@ articleButton.addEventListener("click", () => {
   const notesArray = Array.from(collectedNotes);
 
   articleText.innerHTML = `
-    <p>
-      <strong>Нюрнберг, Зал №600.</strong>
-      Международный военный трибунал стал местом,
-      где впервые в таком масштабе рассматривалась
-      ответственность руководителей государства
-      за преступления войны.
-    </p>
+    <p><strong>Нюрнберг, Зал №600.</strong> Международный военный трибунал стал местом, где впервые в таком масштабе рассматривалась ответственность руководителей государства за преступления войны.</p>
 
-    <p>
-      Работая в зале как корреспондент,
-      я отметил ключевые элементы процесса:
-      судейскую коллегию, сторону обвинения,
-      скамью подсудимых, свидетелей,
-      переводчиков и представителей прессы.
-    </p>
+    <p>Работая в зале как корреспондент, я отметил ключевые элементы процесса: сам трибунал, сторону обвинения, скамью подсудимых, свидетелей и представителей прессы.</p>
 
-    <blockquote>
-      ${notesArray[0]}
-      ${notesArray[1]}
-      ${notesArray[2]}
-    </blockquote>
+    <blockquote>${notesArray[0]} ${notesArray[1]} ${notesArray[2]}</blockquote>
 
-    <p>
-      Эти наблюдения показывают,
-      что процесс был не только судом
-      над отдельными людьми,
-      но и попыткой документально
-      зафиксировать преступления
-      нацистского режима.
-    </p>
+    <p>Эти наблюдения показывают, что процесс был не только судом над отдельными людьми, но и попыткой документально зафиксировать преступления нацистского режима.</p>
 
-    <blockquote>
-      ${notesArray[3]}
-      ${notesArray[4]}
-      ${notesArray[5]}
-    </blockquote>
+    <blockquote>${notesArray[3]} ${notesArray[4]} ${notesArray[5]}</blockquote>
 
-    <p>
-      Зал №600 стал пространством,
-      где юридические доказательства,
-      свидетельские показания,
-      работа переводчиков
-      и внимание мировой прессы
-      превратили судебное заседание
-      в событие исторического масштаба.
-    </p>
+    <p>Зал №600 стал пространством, где юридические доказательства, свидетельские показания и внимание мировой прессы превратили судебное заседание в событие исторического масштаба.</p>
 
-    <p>
-      <strong>Материал подготовлен.</strong>
-      Собранные заметки легли
-      в основу репортажа
-      о Нюрнбергском процессе.
-    </p>
+    <p><strong>Материал подготовлен.</strong> Собранные заметки легли в основу репортажа о Нюрнбергском процессе.</p>
   `;
 
   notebookModal.classList.remove("open");
